@@ -27,7 +27,7 @@ class WorkoutDay(BaseModel):
 
 
 class WorkoutPlan(BaseModel):
-weekly_schedule: list[WorkoutDay]
+    weekly_schedule: list[WorkoutDay]
 
 
 class WorkoutRequest(BaseModel):
