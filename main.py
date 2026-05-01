@@ -27,10 +27,7 @@ class WorkoutDay(BaseModel):
 
 
 class WorkoutPlan(BaseModel):
-    summary: str
-    weekly_schedule: list[WorkoutDay]
-    progression_plan: str
-    safety_notes: list[str]
+weekly_schedule: list[WorkoutDay]
 
 
 class WorkoutRequest(BaseModel):
@@ -87,7 +84,7 @@ Injuries: {request.injuries_or_limitations}
             model="gpt-4.1-mini",
             input=prompt,
             text_format=WorkoutPlan,
-            max_output_tokens=500
+            max_output_tokens=1500
         )
 
         return response.output_parsed
