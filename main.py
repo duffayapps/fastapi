@@ -1,14 +1,26 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, Header, HTTPException
 from pydantic import BaseModel, Field
 from openai import OpenAI
 from dotenv import load_dotenv
+from typing import Optional
 import os
 
 load_dotenv()
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+INTERNAL_SHARED_SECRET = os.getenv("GYM_AI_SHARED_SECRET")
 
 app = FastAPI(title="Gym AI Workout Plan Generator")
+
+
+def require_internal_secret(x_internal_secret: Optional[str] = Header(default=None)):
+    # Only the Mac Fit backend should ever call /generate-workout-plan -
+    # it's the one place that checks a user's free/premium quota before
+    # spending real OpenAI cost, so this endpoint being reachable directly
+    # (as it was before this check existed) meant anyone who found the URL
+    # could generate plans for free, unmetered, forever.
+    if not INTERNAL_SHARED_SECRET or x_internal_secret != INTERNAL_SHARED_SECRET:
+        raise HTTPException(status_code=401, detail="Missing or invalid X-Internal-Secret header")
 
 class Exercise(BaseModel):
     name: str
@@ -45,7 +57,7 @@ def home():
     return {"message": "Gym AI Workout Plan API is running"}
 
 
-@app.post("/generate-workout-plan", response_model=WorkoutPlan)
+@app.post("/generate-workout-plan", response_model=WorkoutPlan, dependencies=[Depends(require_internal_secret)])
 def generate_workout_plan(request: WorkoutRequest):
     prompt = f"""
 You are a qualified fitness assistant.
